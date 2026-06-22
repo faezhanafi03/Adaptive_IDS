@@ -1,0 +1,56 @@
+### 1. Create a Mirror Session
+
+```bash
+create mirror M2
+```
+
+This creates a mirror session named `M2`.
+
+---
+
+### 2. Configure the Source Port (Traffic to Mirror)
+
+```bash
+configure mirror M2 add port 3 both
+```
+
+* Port **3** is the ingress and egress port to monitor.
+* `both` ensures both incoming and outgoing traffic is mirrored.
+
+---
+
+### 3. Configure the Destination (Mirror) Port
+
+```bash
+configure mirror M2 to port 2
+```
+
+* Port **2** is the mirror port where the monitored traffic is sent.
+* This port is connected to your Ubuntu IDS machine for traffic capture.
+
+---
+
+### 4. Verify Mirror Configuration
+
+```bash
+show mirror
+```
+
+This command lists all mirror sessions and confirms:
+
+* The source ports being monitored.
+* The destination port receiving mirrored traffic.
+
+---
+
+### 5. Save Configuration
+
+```bash
+save configuration
+```
+
+* Saves the current mirror configuration so it persists after a reboot.
+
+
+Do you want me to do that?
+

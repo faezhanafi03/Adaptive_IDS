@@ -82,12 +82,21 @@ sudo apt install dsniff -y
 - `detected_alerts_sample.log` – logged anomalous events.
 - `suspicious_mac_sample.txt` – tracks unknown or mismatched MAC addresses.
 - `response_actions_sample.log` – records actions taken by Python scripts (logical isolation).
+- 'blocked_ips.txt' - tracks IP Address from anomalous events
 
 ## Screenshots
 - `ubuntu_terminal.png` – Python scripts running.
+<img width="1600" height="713" alt="image" src="https://github.com/user-attachments/assets/0e1f733d-ff24-4c7a-ba63-afd42caeafff" />
+
 - `kali_attack_simulation.png` – ARP spoofing attack.
+<img width="709" height="102" alt="image" src="https://github.com/user-attachments/assets/27d80e6a-a4ac-4760-a3e4-db85a78877e9" />
+
 - `arp_detected.png` – ARP anomaly logged.
+<img width="1378" height="575" alt="image" src="https://github.com/user-attachments/assets/e71db3ee-685e-4d59-a326-7e14cf7d3415" />
+
 - `icmp_detected.png` – ICMP ping detected.
+<img width="1600" height="480" alt="image" src="https://github.com/user-attachments/assets/8024bdf9-ea9d-4391-aa05-b88ae42fe9ba" />
+
 
 
 

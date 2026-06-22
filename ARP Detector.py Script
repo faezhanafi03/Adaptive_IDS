@@ -1,0 +1,97 @@
+The script of the file as shown below:
+
+from scapy.all import sniff, ARP
+import logging
+import os
+
+# -------------------------------
+# Logging setup
+# -------------------------------
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s [%(levelname)s]: %(message)s',
+                    handlers=[logging.StreamHandler()])
+
+# -------------------------------
+# Known devices table (IP -> expected MAC)
+# Update these with your real network devices
+# -------------------------------
+known_devices = {
+    "192.168.1.1"  : "00:11:22:33:44:55",   # Gateway
+    "192.168.1.20" : "a4:4c:c8:61:41:f1",   # Windows victim
+    "192.168.1.30" : "00:0c:29:7c:a0:dd"    # Kali attacker
+}
+
+# -------------------------------
+# Whitelist (Ubuntu passive IDS)
+# IPs that should never be considered suspicious
+# -------------------------------
+whitelist_ips = {
+    "192.168.12.2",
+    "192.168.12.254",
+    "192.168.12.133"
+}
+
+# -------------------------------
+# File paths
+# -------------------------------
+DETECTED_ALERTS_FILE = "detected_alerts.log"
+RESPONSE_ACTIONS_FILE = "response_actions.log"
+SUSPICIOUS_MAC_FILE = "suspicious_mac.txt"
+
+# Ensure log files exist and are empty at start
+for file in [DETECTED_ALERTS_FILE, RESPONSE_ACTIONS_FILE, SUSPICIOUS_MAC_FILE]:
+    open(file, 'w').close()  # Truncate / create file
+
+# -------------------------------
+# Process a single ARP packet
+# -------------------------------
+def process_arp(pkt):
+    ip_src = pkt.psrc
+    mac_src = pkt.hwsrc
+
+    # Always log ARP packets for monitoring
+    logging.info(f"[ARP] {ip_src} is-at {mac_src}")
+
+    # Ignore whitelisted IPs
+    if ip_src in whitelist_ips:
+        logging.info(f"[INFO] {ip_src} is whitelisted, skipping check.")
+        return
+
+    # Check against known devices
+    if ip_src in known_devices:
+        expected_mac = known_devices[ip_src]
+        if mac_src != expected_mac:
+            # Detected suspicious MAC
+            logging.warning(f"[ALERT] ARP Spoof Detected | IP={ip_src} | Expected={expected_mac} | Received={mac_src}")
+
+            # Write to suspicious_mac.txt
+            with open(SUSPICIOUS_MAC_FILE, "a") as f:
+                f.write(f"{ip_src} has unexpected MAC {mac_src}\n")
+
+            # Write to detected_alerts.log
+            with open(DETECTED_ALERTS_FILE, "a") as f:
+                f.write(f"[ALERT] ARP Spoof Detected | IP={ip_src} | Expected={expected_mac} | Received={mac_src}\n")
+
+            # Write to response_actions.log
+            with open(RESPONSE_ACTIONS_FILE, "a") as f:
+                f.write(f"[ACTION] Detected suspicious MAC {mac_src} from IP {ip_src}\n")
+
+# -------------------------------
+# Sniffer callback
+# -------------------------------
+def arp_callback(pkt):
+    if ARP in pkt and pkt.op == 2:  # ARP reply
+        process_arp(pkt[ARP])
+
+# -------------------------------
+# Main entry point
+# -------------------------------
+def main():
+    logging.info("ARP Detector Started...")
+    logging.info("Monitoring ARP replies...")
+
+    # Start sniffing ARP packets
+    sniff(iface="ens37", filter="arp", prn=arp_callback, store=0)
+
+if __name__ == "__main__":
+    main()

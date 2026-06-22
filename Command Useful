@@ -1,0 +1,26 @@
+Below was the command useful for the system:
+
+sudo systemctl status suricata
+
+sudo ./myenv/bin/python3 arp_detector.py
+
+sudo python3 -u suricata_alert_reader.py
+
+sudo tail -f /var/log/suricata/fast.log 
+
+sudo tcpdump -i ens37 arp (check arp packet flow)
+
+sudo tcpdump -i ens37 icmp (check icmp packet flow)
+
+
+Clear the logs
+
+truncate -s 0 ~/Desktop/adaptive_ids/blocked_ips.txt
+
+truncate -s 0 ~/Desktop/adaptive_ids/detected_alerts.log
+
+truncate -s 0 ~/Desktop/adaptive_ids/response_actions.log
+
+sudo truncate -s 0 /var/log/suricata/eve.json
+
+sudo truncate -s 0 /var/log/suricata/fast.log

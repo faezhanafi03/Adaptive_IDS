@@ -1,0 +1,91 @@
+The content of the file as shown below:
+
+import json
+import time
+import os
+
+# -----------------------------------
+# File paths
+# -----------------------------------
+EVE_LOG = "/var/log/suricata/eve.json"
+BLOCKLIST_FILE = os.path.expanduser("~/Desktop/adaptive_ids/blocked_ips.txt")
+ALERT_LOG_FILE = os.path.expanduser("~/Desktop/adaptive_ids/detected_alerts.log")
+ACTION_LOG_FILE = os.path.expanduser("~/Desktop/adaptive_ids/response_actions.log")
+
+# Target signature to detect
+TARGET_SIGNATURE = "ICMP Ping Detected"
+
+# Keep track of already processed/blocked IPs
+already_blocked = set()
+
+# -----------------------------------
+# Start monitoring alerts
+# -----------------------------------
+print(f"[INFO] Watching alert events from: {EVE_LOG}")
+print(f"[INFO] Logging matched alerts to: {ALERT_LOG_FILE}")
+print(f"[INFO] Writing blocked IPs to: {BLOCKLIST_FILE}")
+print(f"[INFO] Writing action audit log to: {ACTION_LOG_FILE}")
+print(f"[INFO] Filtering signature: {TARGET_SIGNATURE}")
+
+# Open the EVE JSON log for reading
+with open(EVE_LOG, "r") as eve:
+    eve.seek(0, 2)  # Move to end of file
+
+    while True:
+        line = eve.readline()
+        if not line:
+            time.sleep(0.2)
+            continue
+
+        try:
+            data = json.loads(line)
+        except Exception as e:
+            print(f"[ERROR] Failed to parse line: {e}")
+            continue
+
+        if data.get("event_type") != "alert":
+            continue
+
+        alert = data.get("alert", {})
+        signature = alert.get("signature", "")
+        if TARGET_SIGNATURE not in signature:
+            continue
+
+        # Extract information from the alert
+        src_ip = data["src_ip"] if "src_ip" in data else "unknown"
+        dst_ip = data["dest_ip"] if "dest_ip" in data else "unknown"
+        proto = data.get("proto", "unknown")
+        severity = alert.get("severity", "unknown")
+        timestamp = data.get("timestamp", "")
+
+        # Construct log message
+        log_message = (
+            f"[ALERT] time={timestamp} | "
+            f"src={src_ip} -> dst={dst_ip} | "
+            f"proto={proto} | sig={signature} | "
+            f"severity={severity}"
+        )
+        print(log_message)
+
+        # Write to alert log
+        with open(ALERT_LOG_FILE, "a") as log:
+            log.write(log_message + "\n")
+
+        # Handle new IPs
+        if src_ip not in already_blocked:
+            action_msg = (
+                f"[ACTION] Triggered response for "
+                f"{src_ip} -> {dst_ip} | sig={signature}"
+            )
+            print(action_msg)
+
+            with open(ACTION_LOG_FILE, "a") as action_log:
+                action_log.write(action_msg + "\n")
+
+            with open(BLOCKLIST_FILE, "a") as blocklist:
+                blocklist.write(src_ip + "\n")
+
+            already_blocked.add(src_ip)
+            print(f"[BLOCKLIST] Added IP to blocklist: {src_ip}")
+        else:
+            print(f"[SKIP] IP already in blocklist: {src_ip}")
